@@ -12,7 +12,7 @@ from homeassistant.components.media_player.const import (
     SUPPORT_NEXT_TRACK, SUPPORT_VOLUME_STEP, SUPPORT_VOLUME_SET,
     SUPPORT_VOLUME_MUTE, SUPPORT_SELECT_SOURCE, MEDIA_TYPE_CHANNEL)
 from homeassistant.const import (
-    CONF_NAME, STATE_OFF, STATE_ON, STATE_UNKNOWN)
+    CONF_NAME, STATE_OFF, STATE_ON, STATE_UNKNOWN, STATE_UNAVAILABLE)
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -274,10 +274,9 @@ class SmartIRMediaPlayer(MediaPlayerDevice, RestoreEntity):
             return
 
         power_state = self.hass.states.get(self._power_sensor)
-
-        if power_state and power_state.state != STATE_UNKNOWN:
-            if int(power_state.state) <= self._power_sensor_threshold:
+        if power_state and power_state.state not in [STATE_UNKNOWN, STATE_UNAVAILABLE]:
+            if power_state.state == STATE_OFF or int(power_state.state) <= self._power_sensor_threshold:
                 self._state = STATE_OFF
                 self._source = None
-            elif power_state.state == STATE_ON:
+            elif power_state.state == STATE_ON or int(power_state.state) > self._power_sensor_threshold:
                 self._state = STATE_ON
